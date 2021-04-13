@@ -1,0 +1,107 @@
+Create a new deployment called nginx-deploy, with one signle container called nginx, image nginx:1.16 and 4 replicas. 
+The deployment should use RollingUpdate strategy with maxSurge=1, and maxUnavailable=2.
+Next upgrade the deployment to version 1.17 using rolling update.
+Finally, once all pods are updated, undo the update and go back to the previous version.
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+# set a image on the container
+kubectl set image deploy nginx-deploy nginx=nginx:1.17 --record
+
+# rolling status
+kubectl rollout status deployment nginx-deploy 
+
+# rolling history
+kubectl rollout history deployment nginx-deploy
+
+# describe deployment
+kubectl describe deploy nginx-deploy
+
+#create deployment
+kubectl create -f deploy.yaml
+
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2021-04-13T21:23:24Z"
+  generation: 1
+  labels:
+    app: nginx-deploy
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app: {}
+      f:spec:
+        f:progressDeadlineSeconds: {}
+        f:replicas: {}
+        f:revisionHistoryLimit: {}
+        f:selector:
+          f:matchLabels:
+            .: {}
+            f:app: {}
+        f:strategy:
+          f:rollingUpdate:
+            .: {}
+            f:maxSurge: {}
+            f:maxUnavailable: {}
+          f:type: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              .: {}
+              f:app: {}
+          f:spec:
+            f:containers:
+              k:{"name":"nginx"}:
+                .: {}
+                f:image: {}
+                f:imagePullPolicy: {}
+                f:name: {}
+                f:resources: {}
+                f:terminationMessagePath: {}
+                f:terminationMessagePolicy: {}
+            f:dnsPolicy: {}
+            f:restartPolicy: {}
+            f:schedulerName: {}
+            f:securityContext: {}
+            f:terminationGracePeriodSeconds: {}
+    manager: kubectl-create
+    operation: Update
+    time: "2021-04-13T21:23:24Z"
+  name: nginx-deploy
+  namespace: default
+  resourceVersion: "10724"
+  selfLink: /apis/apps/v1/namespaces/default/deployments/nginx-deploy
+  uid: c9f9095c-8f03-4d0f-a38c-99827c313d6b
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 4
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nginx-deploy
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 2
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-deploy
+    spec:
+      containers:
+      - image: nginx:1.16
+        imagePullPolicy: IfNotPresent
+        name: nginx
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      restartPolicy: Always
