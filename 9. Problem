@@ -1,0 +1,44 @@
+Create a single ingress resource called ingress-vh-routing. The resource should route HTTP traffic to multiple hostnames as specified below:
+
+The service video-service should be accessible on http://watch.ecom-store.com:30093/video
+
+The service apparels-service should be accessible on http://apparels.ecom-store.com:30093/wear
+
+--------------------------------------------------------------------------------------------------------------------
+
+
+
+# For validating the ingress we have to use the following command 
+curl http://watch.ecom-store.com:30093/video
+
+# For validating the ingress we have to use the following command 
+http://apparels.ecom-store.com:30093/wear
+
+----------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-vh-routing
+spec:
+  rules:
+  - host: watch.ecom-store.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: /video
+        backend:
+          service:
+            name: video-service
+            port:
+              number: 8080
+  - host: apparels.ecom-store.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: /wear
+        backend:
+          service:
+            name: apparels-service
+            port:
+              number: 8080
