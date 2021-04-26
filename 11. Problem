@@ -149,7 +149,10 @@ status:
 
 set context 'developer' with user = 'drogo' and cluster = 'kubernetes' as the current context.
 
-
 kubectl config use-context developer
+
+kubectl config current-context
+kubectl config get-contexts 
+
 
 
