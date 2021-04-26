@@ -28,3 +28,123 @@ rules:
   verbs:
   - '*'
 --------------------------------------------------------------------------------------------------------------------------------------
+
+create rolebinding = developer-rolebinding, role= 'developer-role', namespace = development
+rolebinding = developer-rolebinding associated with user = 'drogo'
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2021-04-26T00:30:27Z"
+  name: developer-rolebinding
+  namespace: development
+  resourceVersion: "5232"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/namespaces/development/rolebindings/developer-rolebinding
+  uid: 997eb6b6-a626-11eb-bb98-0242ac110008
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: developer-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: drogo
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Request: 1Gi
+Access modes: ReadWriteMany
+pvc name = jekyll-site, namespace development
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jekyll-site
+  namespace: development
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+pod: 'jekyll' has an initContainer, name: 'copy-jekyll-site', image: 'kodekloud/jekyll'
+initContainer: 'copy-jekyll-site' command: [ "jekyll", "new", "/site" ] (command to run: jekyll new /site)
+pod: 'jekyll', initContainer: 'copy-jekyll-site', mountPath = /site
+pod: 'jekyll', initContainer: 'copy-jekyll-site', volume name = site
+pod: 'jekyll', container: 'jekyll', volume name = site
+pod: 'jekyll', container: 'jekyll', mountPath = /site
+pod: 'jekyll', container: 'jekyll', image = kodekloud/jekyll-serve
+pod: 'jekyll', uses volume called 'site' with pvc = 'jekyll-site'
+pod: 'jekyll' uses label 'run=jekyll'
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jekyll
+  labels:
+    run: jekyll
+  namespace: development
+spec:
+  containers:
+  - name: jekyll
+    image: kodekloud/jekyll-serve
+    volumeMounts:
+      - mountPath: /site
+        name: site
+  initContainers:
+  - name: copy-jekyll-site
+    image: kodekloud/jekyll
+    command: [ "jekyll", "new", "/site" ]
+    volumeMounts:
+      - mountPath: /site
+        name: site
+  volumes:
+    - name: site
+      persistentVolumeClaim:
+        claimName: jekyll-site
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Service 'jekyll' uses targetPort: '4000' , namespace: 'development'
+Service 'jekyll' uses Port: '8080' , namespace: 'development'
+Service 'jekyll' uses NodePort: '30097' , namespace: 'development
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    run: jekyll
+  name: jekyll
+  namespace: development
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 4000
+    nodePort: 30097
+  selector:
+    run: jekyll
+  type: NodePort
+status:
+  loadBalancer: {}
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+set context 'developer' with user = 'drogo' and cluster = 'kubernetes' as the current context.
+
+
+
+
+
