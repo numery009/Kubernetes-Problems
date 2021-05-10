@@ -1,13 +1,195 @@
 Configure drupal-pv with hostPath = /drupal-data (create the directory on Worker Nodes)
-
 ---------------------------------------------------------------------------------------
 
 Configure drupal-mysql-pv with hostPath = /drupal-mysql-data (create the directory on Worker Nodes)
-
 ---------------------------------------------------------------------------------------
 
 ssh node01
 mkdir /drupal-data
 mkdir /drupal-mysql-data
 
+
+---------------------------------------------------------------------------------------
+
+Volume Name: drupal-mysql-pv
+Storage: 5Gi
+Access modes: ReadWriteOnce
+hostPath: /drupal-mysql-data
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: drupal-mysql-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /drupal-mysql-data
+
+
+--------------------------------------------------------------
+
+Access modes: ReadWriteOnce
+Volume Name: drupal-pv
+Storage: 5Gi
+hostPath: /drupal-data
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: drupal-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /drupal-data
+
+--------------------------------------------------------------
+
+Claim Name: drupal-mysql-pvc
+Storage Request: 5Gi
+Access modes: ReadWriteOnce
+Bind to Volume: drupal-mysql-pv
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: drupal-mysql-pv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+
+----------------------------------------------------------------
+
+
+Claim Name: drupal-pvc
+Storage Request: 5Gi
+Access modes: ReadWriteOnce
+Bind to Volume: drupal-pv
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: drupal-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+
+----------------------------------------
+
+Secret Name: drupal-mysql-secret
+Secret: MYSQL_ROOT_PASSWORD=root_password
+Secret: MYSQL_DATABASE=drupal-database
+Secret: MYSQL_USER=mysql
+
+
+kubectl create secret generic drupal-mysql-secret --from-literal=MYSQL_ROOT_PASSWORD=root_password --from-literal=MYSQL_DATABASE=drupal-database
+--from-literal=MYSQL_USER=mysql
+
+-----------------------------------------
+
+
+Name: drupal-mysql
+Replicas: 1
+Image: mysql:5.7
+Deployment Volume uses PVC : drupal-mysql-pvc
+Volume Mount Path: /var/lib/mysql, subPath: dbdata
+Deployment: 'drupal-mysql' running
+
+
+
+ENV: MYSQL_DATABASE valueFrom secret: drupal-mysql-secret
+ENV: MYSQL_ROOT_PASSWORD valueFrom secret
+ENV: MYSQL_USER valueFrom secret: drupal-mysql-secret
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: drupal-mysql
+  name: drupal-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drupal-mysql
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: drupal-mysql
+    spec:
+      containers:
+      - image: mysql:5.7
+        name: mysql
+        env:
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: drupal-mysql-secret
+                key: MYSQL_DATABASE
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: drupal-mysql-secret
+                key: MYSQL_USER       
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: drupal-mysql-secret
+                key: MYSQL_ROOT_PASSWORD           
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: site-data
+          subPath: dbdata
+      volumes:
+      - name: site-data
+        persistentVolumeClaim:
+          claimName: drupal-mysql-pvc
+
+--------------------------------------------------------
+
+
+Name: drupal-mysql-service
+Type: ClusterIP
+Port: 3306
+Service Endpoint: drupal-mysql pod
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: drupal-mysql
+  name: drupal-mysql-service
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: drupal-mysql
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
+---------------------------------------------------------------
 
